@@ -36,9 +36,10 @@ struct DMXPacket
 	uint8_t checksum;
 };
 
-extern FILE *port;
-extern uint8_t debug;
+//extern FILE *port;
+//extern uint8_t debug;
 
+void initlib(FILE *p_port, uint8_t p_debug);
 uint8_t get_checksum(struct DMXPacket *data);
 //void get_raw(int max);
 //uint8_t get_char();
@@ -46,5 +47,9 @@ void print_packet(struct DMXPacket *data);
 void get_response(struct DMXPacket *data);
 void send_packet(struct DMXPacket *data);
 int ping(int id);
-
+int readb(int id, int addr, uint8_t *result);
+int readw(int id, int addr, uint16_t *result);
+int writeb(int id, int addr, uint8_t value);
+int writew(int id, int addr, uint16_t value);
+int reset(int id);
 #endif

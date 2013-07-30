@@ -7,6 +7,12 @@ FILE *port;
 uint8_t debug;
 
 
+void initlib(FILE *p_port, uint8_t p_debug)
+{
+	port = p_port;
+	debug = p_debug;
+}
+
 //Calculations
 uint8_t get_checksum(struct DMXPacket *data)
 {
@@ -165,7 +171,7 @@ int ping(int id)
 	struct DMXPacket ping;
 	ping.id = id;
 	ping.length = 2;
-	ping.instruction = INSTRUCTION_PING;
+	ping.instruction = DMX_PING;
 	ping.checksum = ~(ping.id + ping.length + ping.instruction);
 	if(debug)
 	{
@@ -177,7 +183,81 @@ int ping(int id)
 		printf("Waiting for response\n");
 	}
 	get_response(&ping);
-	return ping.checksum == get_checksum(&ping);
+	return ping.error;
 }
 
+int readb(int id, int addr, uint8_t *result)
+{
+	struct DMXPacket p;
+	p.id = id;
+	p.length = 4;
+	p.instruction = DMX_READ;
+	p.params[0] = addr;
+	p.params[1] = 1;
+	p.checksum = get_checksum(&p);
+	send_packet(&p);
+	get_response(&p);
+	if(!p.error)
+	{
+		*result = p.params[0];
+	}
+	return p.error;
+}
 
+int readw(int id, int addr, uint16_t *result)
+{
+	struct DMXPacket p;
+	p.id = id;
+	p.length = 4;
+	p.instruction = DMX_READ;
+	p.params[0] = addr;
+	p.params[1] = 2;
+	p.checksum = get_checksum(&p);
+	send_packet(&p);
+	get_response(&p);
+	if(!p.error)
+	{
+		*result = p.params[0] + (p.params[1] << 8);
+	}
+	return p.error;
+}
+
+int writeb(int id, int addr, uint8_t value)
+{
+	struct DMXPacket p;
+	p.id = id;
+	p.length = 4;
+	p.instruction = DMX_WRITE;
+	p.params[0] = addr;
+	p.params[1] = value;
+	p.checksum = get_checksum(&p);
+	send_packet(&p);
+	get_response(&p);
+	return p.error;
+}
+
+int writew(int id, int addr, uint16_t value)
+{
+	struct DMXPacket p;
+	p.id = id;
+	p.length = 5;
+	p.instruction = DMX_WRITE;
+	p.params[0] = addr;
+	p.params[1] = value & 0x00FF;
+	p.params[2] = value >> 8;
+	p.checksum = get_checksum(&p);
+	send_packet(&p);
+	get_response(&p);
+	return p.error;
+}
+
+int reset(int id)
+{
+	struct DMXPacket p;
+	p.id = id;
+	p.length = 2;
+	p.instruction = DMX_RESET;
+	p.checksum = get_checksum(&p);
+	send_packet(&p);
+	return p.error;
+}
